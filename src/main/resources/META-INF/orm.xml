@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-mappings
+	xmlns="http://java.sun.com/xml/ns/persistence/orm"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_2_0.xsd"
+	version="2.0">
+
+	<entity
+		class="com.vortexbird.sapiens.domain.Usuario">
+		
+		<named-native-query
+			name="Usuario.getUsuariosPorTipo"
+			result-set-mapping="UsuarioDTO">
+			<query>
+	        <![CDATA[
+	        	SELECT usua_id usuaId, nombre nombre, apellido apellido, genero genero, codigo codigo, 
+	        	identificacion identificacion, celular celular, correo correo, "password" "password", 
+	        	fecha_creacion fechaCreacion, fecha_modificacion fechaModificacion, 
+	        	usu_creador usuCreador, usu_modificador usuModificador, estado_registro estadoRegistro, 
+	        	prog_id progId_Programa, tius_id tiusId_TipoUsuario
+				FROM usuario
+				WHERE ((:pTiusId != -1 AND tius_id = :pTiusId) OR :pTiusId = -1)
+					  AND (UPPER(codigo) LIKE UPPER(:pFiltro) OR identificacion||'' LIKE UPPER(:pFiltro) OR UPPER(nombre) LIKE UPPER(:pFiltro) 
+					  OR UPPER(apellido) LIKE UPPER(:pFiltro) OR UPPER(correo) LIKE UPPER(:pFiltro))
+				ORDER BY codigo
+	        ]]>
+	        </query>
+		</named-native-query>
+
+		<named-native-query
+			name="Usuario.getUsuariosPorTipo.count"
+			result-set-mapping="UsuarioDTOCount">
+			<query>
+	        <![CDATA[
+	        	SELECT COUNT(*) total FROM 
+	        	(
+		        	SELECT usua_id usuaId, nombre nombre, apellido apellido, genero genero, codigo codigo, 
+		        	identificacion identificacion, celular celular, correo correo, "password" "password", 
+		        	fecha_creacion fechaCreacion, fecha_modificacion fechaModificacion, 
+		        	usu_creador usuCreador, usu_modificador usuModificador, estado_registro estadoRegistro, 
+		        	prog_id progId_Programa, tius_id tiusId_TipoUsuario
+					FROM usuario
+					WHERE ((:pTiusId != -1 AND tius_id = :pTiusId) OR :pTiusId = -1)
+						AND (UPPER(codigo) LIKE UPPER(:pFiltro) OR identificacion||'' LIKE UPPER(:pFiltro) OR UPPER(nombre) LIKE UPPER(:pFiltro) 
+					  	OR UPPER(apellido) LIKE UPPER(:pFiltro) OR UPPER(correo) LIKE UPPER(:pFiltro))			
+				) Q		
+	        ]]>
+	        </query>
+		</named-native-query>
+	</entity>
+
+	<entity class="com.vortexbird.sapiens.domain.DetallePruebaUsuario">
+		<named-native-query
+			name="DetallePruebaUsuario.cantidadEjecucionesPorModulo"
+			result-set-mapping="DetallePruebaUsuarioCount">
+			<query>
+	        <![CDATA[
+	        	select 	count(dpru.*) total
+				from 	modulo modu 
+				inner	join pregunta preg on preg.modu_id = modu.modu_id 
+				inner   join respuesta resp on resp.preg_id = preg.preg_id 
+				inner   join detalle_prueba_usuario dpru on dpru.resp_id = resp.resp_id 
+				where   modu.modu_id = :pModuId					
+	        ]]>
+	        </query>
+		</named-native-query>
+		
+		<named-native-query
+			name="DetallePruebaUsuario.cantidadEjecucionesPorUsuario"
+			result-set-mapping="DetallePruebaUsuarioCount">
+			<query>
+	        <![CDATA[
+	        	select 	count(dpru.*) total
+				from 	modulo modu 
+				inner	join pregunta preg on preg.modu_id = modu.modu_id 
+				inner   join respuesta resp on resp.preg_id = preg.preg_id 
+				inner   join detalle_prueba_usuario dpru on dpru.resp_id = resp.resp_id 
+				inner   join prueba_usuario prus on prus.prus_id  = dpru .prus_id 
+				where   prus.usua_id = :pUsuaId
+					        	
+	        ]]>
+	        </query>
+		</named-native-query>
+	</entity>
+
+	<entity class="com.vortexbird.sapiens.domain.PruebaUsuario">
+		<named-native-query
+			name="PruebaUsuario.findByUsuario"
+			result-set-mapping="PruebaUsuarioDTO">
+			<query>
+	        <![CDATA[
+				select prus.prus_id prusId, prue.prue_id prueId, tipr.descripcion tipoPrueba, prue.fecha_inicial fechaInicial, prue.fecha_final fechaFinal, 
+					prus.fecha_inicio fechaInicio, prus.tiempo_disponible tiempoDisponible, UPPER(usua.apellido) || ', ' || LOWER(usua.nombre) propietario, 
+					espr.descripcion nombreEstadoPrueba, prus.total_preguntas totalPreguntas, prus.total_respuestas_correctas totalRespuestasCorrectas
+				from prueba_usuario prus
+				inner join prueba prue on prue.prue_id = prus.prue_id
+				inner join estado_prueba espr on espr.espr_id = prus.espr_id
+				inner join usuario usua on usua.usua_id = prue.usu_creador
+				inner join tipo_prueba tipr on tipr.tipr_id = prue.tipr_id
+				where ((:pPrusId != -1 AND prus.prus_id = :pPrusId) OR :pPrusId = -1)
+					and prus.usua_id = :pUsuaId
+					and prus.estado_registro = :pEstado
+					and prue.estado_registro = :pEstado
+				ORDER BY prue.prue_id desc
+	        ]]>
+	        </query>
+		</named-native-query>
+	</entity>
+
+</entity-mappings>
